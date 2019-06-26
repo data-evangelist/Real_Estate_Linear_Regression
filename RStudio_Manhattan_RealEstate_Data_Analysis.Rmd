@@ -1,0 +1,119 @@
+---
+title: "Manhattan_Housing_Data"
+author: "Alistair So-Schoos"
+output:
+  beamer_presentation: default
+  powerpoint_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Home Sale Price Data of Manhattan, New York City, NY
+- August 2012 - August 2013
+- Exploratory Data Analysis Using R
+
+## Slide with R Output
+
+```{r mht, echo = TRUE}
+##Get gdata package and load the Excel file for the housing data of Manhattan.
+require(gdata)
+mht <- read.xls("~/Downloads/dds_datasets/dds_ch2_rollingsales/rollingsales_manhattan.xls", pattern = "BOROUGH")
+head(mht)
+summary(mht)
+```
+
+## Slide with Plot
+
+```{r Sale.Price.N}
+##Data Cleaning Process using Regular Expressions
+
+mht$SALE.PRICE.N <-as.numeric(gsub("[^[:digit:]]","",mht$SALE.PRICE))
+table(is.na(mht$SALE.PRICE.N))
+names.mht <- tolower(names(mht))
+
+mht$gross.sqft <- as.numeric(gsub("[^[:digit:]]","", mht$GROSS.SQUARE.FEET))
+
+mht$land.sqft <- as.numeric(gsub("[^[:digit:]]","", mht$LAND.SQUARE.FEET))
+
+mht$sale.date <- as.Date(mht$SALE.DATE)
+mht$YEAR.BUILT <- as.numeric(as.character(mht$YEAR.BUILT))
+
+attach(mht)
+hist(SALE.PRICE.N)
+hist(SALE.PRICE.N[SALE.PRICE.N>0])
+hist(gross.sqft[SALE.PRICE.N==0])
+
+detach(mht)
+
+```
+
+```{r Actual Sales in Manhattan}
+#Keep only the actual sales
+
+mht.sale <- mht[mht$SALE.PRICE.N!=0,]
+
+plot(mht.sale$gross.sqft, mht.sale$SALE.PRICE.N)
+plot(log(mht.sale$gross.sqft), log(mht.sale$SALE.PRICE.N))
+```
+
+```{r Looking at a subset of the sales}
+##Let's look at the sale data in Chelsea.
+mht.sale <- mht[mht$SALE.PRICE.N!=0,]
+mht.homes <- mht.sale[which(grepl("CHELSEA", mht.sale$NEIGHBORHOOD)),]
+plot(log(mht.homes$gross.sqft),log(mht.homes$SALE.PRICE.N))
+```
+
+```{r Model1}
+##Build a model to illustration the interaction between the size of a home and the sale price.
+model1 <- lm(log(SALE.PRICE.N) ~ log(gross.sqft), data=mht.homes)
+
+mht.homes <- mht.homes[which(mht.homes$gross.sqft>0 &
+                               mht.homes$land.sqft>0) &
+                         mht.homes$SALE.PRICE.N>0,]
+model1 <- lm(log(SALE.PRICE.N) ~ log(gross.sqft), data=mht.homes)
+summary(model1)
+```
+
+```{r plot of model1}
+##Statistics and plot of model 1
+plot(log(mht.homes$gross.sqft),log(mht.homes$SALE.PRICE.N))
+abline(model1,col="red",lwd=2)
+plot(resid(model1))
+```
+
+```{r Model 2}
+##Statistics and plot of Model 2
+model2 <- lm(log(SALE.PRICE.N) ~ log(gross.sqft) +    log(land.sqft) + factor(mht.homes$ZIP.CODE),data=mht.homes)
+summary(model2)
+plot(resid(model2))
+```
+
+```{r Model 2a}
+##Statistics and plot of model 2a
+model2a <- lm(log(SALE.PRICE.N) ~ 0 + log(gross.sqft) +    log(land.sqft) + factor(mht.homes$ZIP.CODE),data=mht.homes)
+summary(model2a)
+plot(resid(model2a))
+```
+```{r Model 3}
+##Statistics and plot of Model3
+model3 <- lm(log(SALE.PRICE.N) ~ log(gross.sqft) +    log(land.sqft) + factor(mht.homes$ZIP.CODE) + factor(mht.homes$BUILDING.CLASS.CATEGORY),data=mht.homes)
+summary(model3)
+plot(resid(model3))
+```
+```{r}
+model4 <- lm(log(SALE.PRICE.N) ~ log(gross.sqft) +    log(land.sqft) + factor(mht.homes$RESIDENTIAL.UNITS) + factor(mht.homes$YEAR.BUILT),data=mht.homes)
+summary(model4)
+plot(resid(model4))
+```
+
