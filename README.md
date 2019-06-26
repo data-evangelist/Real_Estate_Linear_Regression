@@ -1,5 +1,5 @@
 # Real_Estate_Linear_Regression
-Analysis of a sample of real estate sale data from New York City
+Analysis of a sample of real estate sales data from New York City
 
 - Home Sale Price Data of Manhattan, New York City, NY
 - August 2012 - August 2013
